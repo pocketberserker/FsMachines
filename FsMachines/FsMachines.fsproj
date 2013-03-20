@@ -41,6 +41,7 @@
     <Compile Include="Automation.fs" />
     <Compile Include="Process.fs" />
     <Compile Include="These.fs" />
+    <Compile Include="Tee.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FSharpx.Core">
