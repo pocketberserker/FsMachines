@@ -40,6 +40,7 @@
     <Compile Include="Plan.fs" />
     <Compile Include="Automation.fs" />
     <Compile Include="Process.fs" />
+    <Compile Include="These.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FSharpx.Core">
