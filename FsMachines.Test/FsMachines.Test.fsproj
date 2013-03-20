@@ -39,6 +39,7 @@
     <None Include="App.config" />
     <None Include="packages.config" />
     <Compile Include="FsCheckRunner.fs" />
+    <Compile Include="ProcessTest.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FsCheck">
