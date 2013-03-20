@@ -16,6 +16,10 @@ type Automation<'i, 'o> =
   | Mealy of ('i -> 'o * Automation<'i, 'o>)
   | Moore of 'o * ('i -> Automation<'i, 'o>)
 
+type Joiner<'i, 'j, 'o> = Machine<'i -> obj * 'j -> obj, 'o>
+
+type Splitter<'i, 'o, 'p> = Machine<'i, Choice<'o, 'p>>
+
 let rec andThen (p : Process<'o, 'p>) (pl : Plan<'k, 'o, 'a>) : Plan<'k, 'p, 'a> =
   let rec inner pl = function
   | Emit(o, next) -> Emit(o, fun () -> andThen (next ()) pl)
