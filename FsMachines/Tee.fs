@@ -60,8 +60,7 @@ let hashJoin (f : _ -> 'k) (g : _ -> 'k) : Tee<_, _, _ * _> =
         let k = g b
         m
         |> Map.findOrDefault k Seq.empty
-        |> Seq.toList
-        |> flip (List.foldBack (fun a -> fun r -> Emit((a, b), fun () -> r))) (Return ())
+        |> flip (Seq.foldBack (fun a -> fun r -> Emit((a, b), fun () -> r.Value))) (Return ())
         |> repeatedly
       )
     return r
