@@ -41,6 +41,7 @@
     <Compile Include="Plan.fs" />
     <Compile Include="Automation.fs" />
     <Compile Include="Process.fs" />
+    <Compile Include="Source.fs" />
     <Compile Include="These.fs" />
     <Compile Include="Tee.fs" />
     <Compile Include="Wye.fs" />
