@@ -11,5 +11,5 @@ let cap (r : Source<'k, 'i>) (p : Process<'i, 'o>) : Source<'k, 'o> = r |> andTh
 let cycled foldBack os : Source<'k, 'o> =
   traversePlan_ foldBack os emit |>repeatedly
 
-let source os : Source<'k, 'o> =
+let source foldBack os : Source<'k, 'o> =
   traversePlan_ foldBack os emit |> compile
