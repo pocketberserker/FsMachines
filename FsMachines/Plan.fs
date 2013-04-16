@@ -132,3 +132,5 @@ let plan = PlanBuilder()
 let traversePlan_ foldBack as_ (f : 'a -> Plan<'k, 'o, unit>) : Plan<'k, 'o, unit> =
   foldBack (fun a p -> f a >>. p) as_ (Return ())
  
+let filter f p =
+  bind (fun x -> if f x then Return x else Stop) p
