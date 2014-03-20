@@ -37,16 +37,16 @@ let capL s (t : Tee<'i, 'j, 'o>) : Process<'j, 'o> = addL s t |> Plan.inmap capp
 
 let capR s (t : Tee<'i, 'j, 'o>) : Process<'i, 'o> = addR s t |> Plan.inmap cappedT
 
-let left<'a> : Handle<T<'a, obj>, 'a> =
+let left<'a, 'b> : Handle<T<'a, 'b>, 'a> =
   let g = fun (f : 'a -> obj) -> Choice1Of2 f in g
 
-let right<'a> : Handle<T<obj, 'a>, 'a> =
+let right<'a, 'b> : Handle<T<'b, 'a>, 'a> =
   let g = fun (f : 'a -> obj) -> Choice2Of2 f in g
 
-let hashJoin (f : _ -> 'k) (g : _ -> 'k) : Tee<_, _, _ * _> =
+let hashJoin (f : 'a -> 'k) (g : 'b -> 'k) : Tee<'a, 'b, 'a * 'b> =
   let rec build m : Plan<T<_, _>, _, Map<'k, _ seq>> =
     plan {
-      let! a = awaits(left<_>)
+      let! a = awaits(left<_,_>)
       let! mp =
         let ak = f a
         build (m |> Map.add ak (m |> Map.findOrDefault ak Seq.empty |> flip Seq.append (seq { yield a })))
@@ -55,7 +55,7 @@ let hashJoin (f : _ -> 'k) (g : _ -> 'k) : Tee<_, _, _ * _> =
   in plan {
     let! m = build Map.empty
     let! r =
-      awaits(right<_>)
+      awaits(right<_,_>)
       |> Plan.bind (fun b ->
         let k = g b
         m
