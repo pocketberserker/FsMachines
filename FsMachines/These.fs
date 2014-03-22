@@ -1,4 +1,4 @@
-﻿module Machines.These
+﻿namespace Machines
 
 type These<'a, 'b> =
   | This of 'a

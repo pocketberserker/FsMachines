@@ -1,7 +1,6 @@
-﻿module Machines.Driver
+﻿namespace Machines
 
 open FSharpx
-open Plan
 
 [<AbstractClass>]
 type AsyncDriver<'T>() =

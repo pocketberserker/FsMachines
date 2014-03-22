@@ -1,8 +1,6 @@
-﻿module Machines.Procedure
+﻿namespace Machines
 
 open FSharpx
-open Machines.Plan
-open Machines.Driver
 
 [<AbstractClass>]
 type AsyncProcedure<'T, 'U>() =
@@ -12,7 +10,7 @@ type AsyncProcedure<'T, 'U>() =
 
   member this.AndThen(p: Process<'U, 'b>) =
     { new AsyncProcedure<_, _>() with
-      member x.Machine = this.Machine |> andThen p
+      member x.Machine = this.Machine |> Plan.andThen p
       member x.WithDriver(f) = this.WithDriver(f) }
 
   member this.Tee(p: AsyncProcedure<_,_>, t) =
