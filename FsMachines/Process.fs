@@ -75,3 +75,5 @@ let rec supply x = function
 | Stop -> Stop
 | Emit(o, next) -> Emit(o, fun () -> supply x (next ()))
 | Await(f, g, _) -> supply (Seq.skip 1 x) (f (g (Seq.head x)))
+
+let apply f : Process<'a, 'b> = await |> bind (f >> emit) |> repeatedly

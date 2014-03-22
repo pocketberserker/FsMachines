@@ -47,6 +47,8 @@
     <Compile Include="These.fs" />
     <Compile Include="Tee.fs" />
     <Compile Include="Wye.fs" />
+    <Compile Include="Driver.fs" />
+    <Compile Include="Procedure.fs" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
