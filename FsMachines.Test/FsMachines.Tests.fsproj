@@ -7,9 +7,9 @@
     <ProjectGuid>1f3ede6e-7d84-45bd-9b0c-00198760a714</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>FsMachines.Test</RootNamespace>
-    <AssemblyName>FsMachines.Test</AssemblyName>
+    <AssemblyName>FsMachines.Tests</AssemblyName>
     <targetframeworkversion>v4.5</targetframeworkversion>
-    <Name>FsUnitTest</Name>
+    <Name>FsMachines.Tests</Name>
     <TargetFrameworkProfile />
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
     <RestorePackages>true</RestorePackages>

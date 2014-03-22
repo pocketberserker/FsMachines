@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsMachines", "FsMachines\FsMachines.fsproj", "{25D70805-CE15-4283-B4AC-D713EE00AAF7}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsMachines.Test", "FsMachines.Test\FsMachines.Test.fsproj", "{1F3EDE6E-7D84-45BD-9B0C-00198760A714}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsMachines.Tests", "FsMachines.Test\FsMachines.Tests.fsproj", "{1F3EDE6E-7D84-45BD-9B0C-00198760A714}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{99A97E33-D10B-4CA3-A49C-A891985B12E1}"
 	ProjectSection(SolutionItems) = preProject
