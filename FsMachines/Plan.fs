@@ -137,3 +137,10 @@ module Plan =
  
   let filter f p =
     bind (fun x -> if f x then Return x else Stop) p
+
+  open FSharpx
+
+  let rec foldMap (monoid: 'b Monoid) f = function
+    | Emit(o, next) -> monoid.Combine(f o, next() |> foldMap monoid f)
+    | Await(_, _, failure) -> failure() |> foldMap monoid f
+    | _ -> monoid.Zero()

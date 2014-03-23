@@ -43,25 +43,79 @@ module Tee =
   let right<'a, 'b> : Handle<T<'b, 'a>, 'a> =
     let g = fun (f : 'a -> obj) -> Choice2Of2 f in g
 
+  open Plan
+
   let hashJoin (f : 'a -> 'k) (g : 'b -> 'k) : Tee<'a, 'b, 'a * 'b> =
     let rec build m : Plan<T<_, _>, _, Map<'k, _ seq>> =
-      Plan.plan {
-        let! a = Plan.awaits(left<_,_>)
+      plan {
+        let! a = awaits(left<_,_>)
         let! mp =
           let ak = f a
           build (m |> Map.add ak (m |> Map.findOrDefault ak Seq.empty |> flip Seq.append (seq { yield a })))
         return mp
       }
-    Plan.plan {
+    plan {
       let! m = build Map.empty
       let! r =
-        Plan.awaits(right<_,_>)
+        awaits(right<_,_>)
         |> Plan.bind (fun b ->
           let k = g b
           m
           |> Map.findOrDefault k Seq.empty
-          |> flip (Seq.foldBack (fun a -> fun r -> Emit((a, b), fun () -> r.Value))) (Return ())
+          |> flip (Seq.foldBack (fun a r -> Emit((a, b), fun () -> r.Value))) (Return ())
           |> Plan.repeatedly
         )
       return r
     }
+
+  let rec mergeOuterChunks<'a, 'b, 'k when 'a : equality and 'b : equality and 'k : comparison>
+    : Tee<'k * Vector<'a>, 'k * Vector<'b>, These<'a, 'b>> =
+    Plan.awaits left<_, _>
+    |> Plan.bind (fun (ka, as_) ->
+      Plan.awaits right<_, _>
+      |> Plan.bind (fun (kb, bs) -> mergeOuterAux ka as_ kb bs)
+      |> Plan.orElse (
+        Plan.traversePlan_ Vector.foldBack as_ (This >> emit)
+        >>. (Process.flattened Vector.foldBack left<_, _>
+        |> Plan.inmap (function
+          | Choice1Of2 a -> Choice1Of2 (snd >> a)
+          | Choice2Of2 b -> Choice2Of2 b)
+        |> Plan.outmap This)))
+    |> Plan.orElse (
+      Process.flattened Vector.foldBack right<_, _>
+      |> Plan.inmap (Choice.mapSecond (fun y -> snd >> y))
+      |> Plan.outmap That)
+
+  and mergeOuterAux ka ca kb cb : Tee<'k * Vector<'a>, 'k * Vector<'b>, These<'a, 'b>> =
+    let comp = compare ka kb
+    if comp < 0 then
+      Plan.traversePlan_ Vector.foldBack ca (fun a ->
+        emit (This a)
+        >>. awaits left<_, _>
+        |> Plan.bind (fun (kap, cap) -> mergeOuterAux kap cap kb cb)
+        |> Plan.orElse (
+          Plan.traversePlan_ Vector.foldBack cb (That >> emit)
+          >>. (Process.flattened Vector.foldBack right<_, _>
+          |> Plan.inmap (Choice.mapSecond (fun y -> snd >> y))
+          |> Plan.outmap That)))
+    elif comp > 0 then
+      Plan.traversePlan_ Vector.foldBack cb (fun b ->
+        emit (That b)
+        >>. awaits right<_, _>
+        |> Plan.bind (fun (kbp, cbp) -> mergeOuterAux ka ca kbp cbp)
+        |> Plan.orElse (
+          Plan.traversePlan_ Vector.foldBack ca (This >> emit)
+          >>. (Process.flattened Vector.foldBack left<_, _>
+          |> Plan.inmap (function
+            | Choice1Of2 a -> Choice1Of2 (snd >> a)
+            | Choice2Of2 b -> Choice2Of2 b)
+          |> Plan.outmap This)))
+    else
+      Plan.traversePlan_ Vector.foldBack
+        (Vector.ofSeq (seq { for a in ca do for b in cb do yield Both(a, b) })) emit
+      >>. mergeOuterChunks
+
+  let mergeOuterJoin f g : Tee<'a, 'b, These<'a, 'b>> =
+    let f = Process.groupingBy f |> Plan.outmap (fun (x,v) -> (x, Vector.ofSeq v))
+    let g = Process.groupingBy g |> Plan.outmap (fun (x,v) -> (x, Vector.ofSeq v))
+    tee f g mergeOuterChunks

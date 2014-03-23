@@ -43,6 +43,7 @@
     <Compile Include="FsCheckRunner.fs" />
     <Compile Include="ProcessTest.fs" />
     <Compile Include="ProcedureTest.fs" />
+    <Compile Include="TeeTest.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FsCheck">

@@ -29,3 +29,14 @@ type AsyncDriver<'T>() =
         match k with
         | Choice1Of2 a -> this.Apply(a)
         | Choice2Of2 b -> d.Apply(b) }
+
+module Driver =
+
+  let driveId (monoid: Monoid<'b>) drv (m: Machine<'k, 'a>) g =
+    let rec inner acc = function
+      | Stop -> acc
+      | Emit(h, t) ->
+        let r = g h
+        inner (monoid.Combine(acc, r)) (t())
+      | Await(recv, k, fb) -> inner acc (drv k |> Option.map recv |> Option.getOrElse (fb()))
+    inner (monoid.Zero()) m
