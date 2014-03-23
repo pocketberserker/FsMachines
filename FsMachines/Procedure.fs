@@ -8,6 +8,11 @@ type AsyncProcedure<'T, 'U>() =
   abstract member Machine : Machine<'T, 'U>
   abstract member WithDriver<'b> : (AsyncDriver<'T> -> Async<'b>) -> Async<'b>
 
+  member this.Map(f: 'U -> 'V) =
+    { new AsyncProcedure<'T, 'V>() with
+      member x.Machine = this.Machine |> Plan.outmap f
+      member x.WithDriver(f) = this.WithDriver(f) }
+
   member this.AndThen(p: Process<'U, 'b>) =
     { new AsyncProcedure<_, _>() with
       member x.Machine = this.Machine |> Plan.andThen p
