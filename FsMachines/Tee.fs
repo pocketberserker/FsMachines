@@ -74,13 +74,13 @@ module Tee =
       |> Plan.bind (fun (kb, bs) -> mergeOuterAux ka as_ kb bs)
       |> Plan.orElse (
         Plan.traversePlan_ Vector.foldBack as_ (This >> emit)
-        >>. (Process.flattened Vector.foldBack left<_, _>
+        >>. (Machine.flattened Vector.foldBack left<_, _>
         |> Plan.inmap (function
           | Choice1Of2 a -> Choice1Of2 (snd >> a)
           | Choice2Of2 b -> Choice2Of2 b)
         |> Plan.outmap This)))
     |> Plan.orElse (
-      Process.flattened Vector.foldBack right<_, _>
+      Machine.flattened Vector.foldBack right<_, _>
       |> Plan.inmap (Choice.mapSecond (fun y -> snd >> y))
       |> Plan.outmap That)
 
@@ -93,7 +93,7 @@ module Tee =
         |> Plan.bind (fun (kap, cap) -> mergeOuterAux kap cap kb cb)
         |> Plan.orElse (
           Plan.traversePlan_ Vector.foldBack cb (That >> emit)
-          >>. (Process.flattened Vector.foldBack right<_, _>
+          >>. (Machine.flattened Vector.foldBack right<_, _>
           |> Plan.inmap (Choice.mapSecond (fun y -> snd >> y))
           |> Plan.outmap That)))
     elif comp > 0 then
@@ -103,7 +103,7 @@ module Tee =
         |> Plan.bind (fun (kbp, cbp) -> mergeOuterAux ka ca kbp cbp)
         |> Plan.orElse (
           Plan.traversePlan_ Vector.foldBack ca (This >> emit)
-          >>. (Process.flattened Vector.foldBack left<_, _>
+          >>. (Machine.flattened Vector.foldBack left<_, _>
           |> Plan.inmap (function
             | Choice1Of2 a -> Choice1Of2 (snd >> a)
             | Choice2Of2 b -> Choice2Of2 b)
