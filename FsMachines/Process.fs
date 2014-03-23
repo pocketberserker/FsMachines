@@ -32,8 +32,7 @@ module Process =
   let filtered (p : 'a -> bool) : Process<'a, 'a> =
     repeatedly <| plan {
       let! i = await
-      let! _  = if p i then emit i else Return ()
-      return ()
+      return! if p i then emit i else Return ()
     }
 
   let dropping n : Process<'a, 'a> = replicate n await >>. id
@@ -50,8 +49,7 @@ module Process =
       | acc, 0 -> emit acc
       | acc, n -> plan {
         let! i = await |> orElse (emit acc >>. Stop)
-        let! _ = go (Seq.append acc [i]) (n - 1)
-        return ()
+        return! go (Seq.append acc [i]) (n - 1)
     }
     go Seq.empty<'a> n |> repeatedly
 

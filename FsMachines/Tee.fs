@@ -58,12 +58,11 @@ module Tee =
       let! m = build Map.empty
       let! b = awaits(right<_,_>)
       let k = g b
-      let! r =
-          m
-          |> Map.findOrDefault k Seq.empty
-          |> flip (Seq.foldBack (fun a r -> Emit((a, b), fun () -> r.Value))) (Return ())
-          |> Plan.repeatedly
-      return r
+      return!
+        m
+        |> Map.findOrDefault k Seq.empty
+        |> flip (Seq.foldBack (fun a r -> Emit((a, b), fun () -> r.Value))) (Return ())
+        |> Plan.repeatedly
     }
 
   let rec mergeOuterChunks<'a, 'b, 'k when 'a : equality and 'b : equality and 'k : comparison>

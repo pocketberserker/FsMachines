@@ -127,6 +127,7 @@ module Plan =
 
   type PlanBuilder() =
     member this.Return(x) = point x
+    member this.ReturnFrom(x: Plan<_, _, _>) = x
     member this.Bind(m, f) = bind f m
     member this.Zero() = empty
 
