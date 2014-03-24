@@ -48,7 +48,7 @@ module Tee =
   let hashJoin (f : 'a -> 'k) (g : 'b -> 'k) : Tee<'a, 'b, 'a * 'b> =
     let rec build m : Plan<T<_, _>, _, Map<'k, _ seq>> =
       awaits(left<_,_>)
-      |> Plan.bind (fun a ->
+      >>= (fun a ->
         let ak = f a
         m
         |> Map.add ak (m |> Map.findOrDefault ak Seq.empty |> flip Seq.append (Seq.singleton a))
@@ -74,9 +74,9 @@ module Tee =
   let rec mergeOuterChunks<'a, 'b, 'k when 'a : equality and 'b : equality and 'k : comparison>
     : Tee<'k * Vector<'a>, 'k * Vector<'b>, These<'a, 'b>> =
     Plan.awaits left<_, _>
-    |> Plan.bind (fun (ka, as_) ->
+    >>= (fun (ka, as_) ->
       Plan.awaits right<_, _>
-      |> Plan.bind (fun (kb, bs) -> mergeOuterAux ka as_ kb bs)
+      >>= (fun (kb, bs) -> mergeOuterAux ka as_ kb bs)
       |> Plan.orElse (
         Plan.traversePlan_ Vector.foldBack as_ (This >> emit)
         >>. (Machine.flattened Vector.foldBack left<_, _>
@@ -95,7 +95,7 @@ module Tee =
       Plan.traversePlan_ Vector.foldBack ca (fun a ->
         emit (This a)
         >>. awaits left<_, _>
-        |> Plan.bind (fun (kap, cap) -> mergeOuterAux kap cap kb cb)
+        >>= (fun (kap, cap) -> mergeOuterAux kap cap kb cb)
         |> Plan.orElse (
           Plan.traversePlan_ Vector.foldBack cb (That >> emit)
           >>. (Machine.flattened Vector.foldBack right<_, _>
@@ -105,7 +105,7 @@ module Tee =
       Plan.traversePlan_ Vector.foldBack cb (fun b ->
         emit (That b)
         >>. awaits right<_, _>
-        |> Plan.bind (fun (kbp, cbp) -> mergeOuterAux ka ca kbp cbp)
+        >>= (fun (kbp, cbp) -> mergeOuterAux ka ca kbp cbp)
         |> Plan.orElse (
           Plan.traversePlan_ Vector.foldBack ca (This >> emit)
           >>. (Machine.flattened Vector.foldBack left<_, _>

@@ -4,7 +4,7 @@ open Plan
 
 module Machine =
 
-  let pass (h : Handle<'k, 'o>) = awaits h |> bind (fun x -> emit x) |> repeatedly
+  let pass (h : Handle<'k, 'o>) = awaits h >>= (fun x -> emit x) |> repeatedly
 
   let stopped : Machine<'a, 'a> = Stop
 
@@ -15,7 +15,7 @@ module Process =
 
   let echo<'a> : Process<'a, 'a> = repeatedly await
 
-  let id<'a> : Process<'a, 'a> = await |> bind emit |> repeatedly
+  let id<'a> : Process<'a, 'a> = await >>= emit |> repeatedly
 
   let compose (m : Process<'b, 'c>) (n : Process<'a, 'b>) : Process<'a, 'c> = n |> andThen m
 
@@ -61,7 +61,7 @@ module Process =
         if p (x, y) then collect (Seq.append acc [x]) y
         else emit(Seq.append acc [x]) >>. collect Seq.empty y
       )
-    await |> bind (fun x -> collect Seq.empty x)
+    await >>= (fun x -> collect Seq.empty x)
 
   let groupingBy (f: 'a -> 'k): Process<'a, 'k * 'a seq> =
     grouping (fun (x, y) -> f x = f y) |> outmap (fun v -> (f (Seq.head v), v))
@@ -74,4 +74,4 @@ module Process =
     | Emit(o, next) -> Emit(o, fun () -> supply x (next ()))
     | Await(f, g, _) -> supply (Seq.skip 1 x) (f (g (Seq.head x)))
 
-  let apply f : Process<'a, 'b> = await |> bind (f >> emit) |> repeatedly
+  let apply f : Process<'a, 'b> = await >>= (f >> emit) |> repeatedly
