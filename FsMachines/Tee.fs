@@ -65,6 +65,12 @@ module Tee =
         |> Plan.repeatedly
     }
 
+  let private (|LT|GT|EQ|) (a, b) =
+    let n = compare a b
+    if n < 0 then LT
+    elif n > 0 then GT
+    else EQ
+
   let rec mergeOuterChunks<'a, 'b, 'k when 'a : equality and 'b : equality and 'k : comparison>
     : Tee<'k * Vector<'a>, 'k * Vector<'b>, These<'a, 'b>> =
     Plan.awaits left<_, _>
@@ -84,8 +90,8 @@ module Tee =
       |> Plan.outmap That)
 
   and mergeOuterAux ka ca kb cb : Tee<'k * Vector<'a>, 'k * Vector<'b>, These<'a, 'b>> =
-    let comp = compare ka kb
-    if comp < 0 then
+    match (ka, kb) with
+    | LT ->
       Plan.traversePlan_ Vector.foldBack ca (fun a ->
         emit (This a)
         >>. awaits left<_, _>
@@ -95,7 +101,7 @@ module Tee =
           >>. (Machine.flattened Vector.foldBack right<_, _>
           |> Plan.inmap (Choice.mapSecond (fun y -> snd >> y))
           |> Plan.outmap That)))
-    elif comp > 0 then
+    | GT ->
       Plan.traversePlan_ Vector.foldBack cb (fun b ->
         emit (That b)
         >>. awaits right<_, _>
@@ -107,7 +113,7 @@ module Tee =
             | Choice1Of2 a -> Choice1Of2 (snd >> a)
             | Choice2Of2 b -> Choice2Of2 b)
           |> Plan.outmap This)))
-    else
+    | EQ ->
       Plan.traversePlan_ Vector.foldBack
         (Vector.ofSeq (seq { for a in ca do for b in cb do yield Both(a, b) })) emit
       >>. mergeOuterChunks
