@@ -8,83 +8,13 @@ open FsCheck.NUnit
 open Machines
 open FSharpx
 
-[<AbstractClass>]
-type IdDriver<'T>() =
-
-  abstract member Apply: 'T -> Option<obj>
-
-  member this.DriveLeft(m: Machine<'T, 'a>, g: 'a -> 'b, initial: 'c, f: 'c * 'b -> 'c) =
-    let rec inner (m: Machine<'T, 'a>) (z: 'c) : 'c =
-      match m with
-      | Stop -> z
-      | Emit(a, k) ->
-        let next = k ()
-        a |> g |> (fun x -> inner next (f (z, x)))
-      | Await(k, s, f) ->
-        this.Apply(s)
-        |> (Option.map k >> Option.getOrElse (f ()))
-        |> (flip inner z)
-    inner m initial
-  
-  abstract member Drive : Monoid<'b> * Machine<'T, 'a> * ('a -> 'b) -> 'b
-  default this.Drive(monoid: Monoid<'b>, m: Machine<'T, 'a>, g: 'a -> 'b) =
-    this.DriveLeft(m, g, monoid.Zero(), fun (a, b) -> monoid.Combine(a, b))
-
-  abstract member Append : IdDriver<'U> -> IdDriver<Choice<'T, 'U>>
-  default this.Append(d: IdDriver<'U>): IdDriver<Choice<'T, 'U>> =
-    { new IdDriver<Choice<'T, 'U>>() with
-      member x.Apply(k) =
-        match k with
-        | Choice1Of2 a -> this.Apply(a)
-        | Choice2Of2 b -> d.Apply(b) }
-
-module Driver =
-  let rec Id<'T> (drv: 'T -> obj option) : IdDriver<'T> =
-    { new IdDriver<'T>() with
-      member this.Apply(k) = drv k
-      override this.Drive(monoid, m, g) = Driver.driveId monoid drv m g
-      override this.Append(d) =
-        Id<Choice<'T, 'U>> (function
-          | Choice1Of2 a -> this.Apply(a)
-          | Choice2Of2 b -> d.Apply(b)) }
-
-[<AbstractClass>]
-type IdProcedure<'T, 'U>() =
-
-  abstract member Machine : Machine<'T, 'U>
-  abstract member WithDriver<'b> : (IdDriver<'T> -> 'b) -> 'b
-
-  member this.Map(f: 'U -> 'V) =
-    { new IdProcedure<'T, 'V>() with
-      member x.Machine = this.Machine |> Plan.outmap f
-      member x.WithDriver(f) = this.WithDriver(f) }
-
-  member this.AndThen(p: Process<'U, 'b>) =
-    { new IdProcedure<_, _>() with
-      member x.Machine = this.Machine |> Plan.andThen p
-      member x.WithDriver(f) = this.WithDriver(f) }
-
-  member this.Tee(p: IdProcedure<_,_>, t) =
-    { new IdProcedure<_, _>() with
-      member x.Machine = Tee.tee this.Machine p.Machine t
-      member x.WithDriver(k) =
-        this.WithDriver(fun d1 -> p.WithDriver(fun d2 -> k (d1.Append(d2)))) }
-
-  member this.Execute(monoid: Monoid<'U>) =
-    this.WithDriver(fun d -> d.Drive(monoid, this.Machine, id))
-
 [<TestFixture>]
 module TeeTest =
 
   let fsCheck t = fsCheck "" t
 
-  let idProcedure<'U> (s: Source<_, 'U>) =
-    { new IdProcedure<unit, 'U>() with
-      member x.Machine = s
-      member x.WithDriver(f) = f (Driver.Id (box >> Some)) }
-
-  let q1 = Source.source List.foldBack ([("3", 1); ("5", 2); ("7", 2)]) |> idProcedure
-  let q2 = Source.source List.foldBack ([(2, "10"); (1, "9"); (12, "14")]) |> idProcedure
+  let q1 = Source.source List.foldBack ([("3", 1); ("5", 2); ("7", 2)]) |> Procedure.idProcedure
+  let q2 = Source.source List.foldBack ([(2, "10"); (1, "9"); (12, "14")]) |> Procedure.idProcedure
   
   let listMonoid<'a> =
     { new Monoid<'a list>() with
