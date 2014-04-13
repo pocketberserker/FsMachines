@@ -46,23 +46,24 @@ module Tee =
   open Plan
 
   let hashJoin (f : 'a -> 'k) (g : 'b -> 'k) : Tee<'a, 'b, 'a * 'b> =
-    let rec build m : Plan<T<_, _>, _, Map<'k, _ seq>> =
+    let rec build m : Plan<T<_, _>, _, Map<'k, Vector<_>>> =
       awaits(left<_,_>)
       >>= (fun a ->
         let ak = f a
         m
-        |> Map.add ak (m |> Map.findOrDefault ak Seq.empty |> flip Seq.append (Seq.singleton a))
+        |> Map.add ak (m |> Map.findOrDefault ak Vector.empty |> flip Vector.append (Vector.singleton a))
         |> build)
       |> Plan.orElse (Return m)
     plan {
       let! m = build Map.empty
-      let! b = awaits(right<_,_>)
-      let k = g b
       return!
-        m
-        |> Map.findOrDefault k Seq.empty
-        |> flip (Seq.foldBack (fun a r -> Emit((a, b), fun () -> r.Value))) (Return ())
-        |> Plan.repeatedly
+        awaits(right<_,_>)
+        >>= (fun b ->
+          let k = g b
+          m
+          |> Map.findOrDefault k Vector.empty
+          |> flip (Vector.foldBack (fun a r -> Emit((a, b), fun () -> r))) (Return ()))
+        |> repeatedly
     }
 
   let private (|LT|GT|EQ|) (a, b) =
