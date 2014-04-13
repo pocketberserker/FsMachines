@@ -81,9 +81,7 @@ module Tee =
       |> Plan.orElse (
         Plan.traversePlan_ Vector.foldBack as_ (This >> emit)
         >>. (Machine.flattened Vector.foldBack left<_, _>
-        |> Plan.inmap (function
-          | Choice1Of2 a -> Choice1Of2 (snd >> a)
-          | Choice2Of2 b -> Choice2Of2 b)
+        |> Plan.inmap (Choice.map (fun a -> snd >> a))
         |> Plan.outmap This)))
     |> Plan.orElse (
       Machine.flattened Vector.foldBack right<_, _>
@@ -93,27 +91,23 @@ module Tee =
   and mergeOuterAux ka ca kb cb : Tee<'k * Vector<'a>, 'k * Vector<'b>, These<'a, 'b>> =
     match (ka, kb) with
     | LT ->
-      Plan.traversePlan_ Vector.foldBack ca (fun a ->
-        emit (This a)
-        >>. awaits left<_, _>
-        >>= (fun (kap, cap) -> mergeOuterAux kap cap kb cb)
-        |> Plan.orElse (
-          Plan.traversePlan_ Vector.foldBack cb (That >> emit)
-          >>. (Machine.flattened Vector.foldBack right<_, _>
-          |> Plan.inmap (Choice.mapSecond (fun y -> snd >> y))
-          |> Plan.outmap That)))
+      Plan.traversePlan_ Vector.foldBack ca (This >> emit)
+      >>. awaits left<_, _>
+      >>= (fun (kap, cap) -> mergeOuterAux kap cap kb cb)
+      |> Plan.orElse (
+        Plan.traversePlan_ Vector.foldBack cb (That >> emit)
+        >>. (Machine.flattened Vector.foldBack right<_, _>
+        |> Plan.inmap (Choice.mapSecond (fun y -> snd >> y))
+        |> Plan.outmap That))
     | GT ->
-      Plan.traversePlan_ Vector.foldBack cb (fun b ->
-        emit (That b)
-        >>. awaits right<_, _>
-        >>= (fun (kbp, cbp) -> mergeOuterAux ka ca kbp cbp)
-        |> Plan.orElse (
-          Plan.traversePlan_ Vector.foldBack ca (This >> emit)
-          >>. (Machine.flattened Vector.foldBack left<_, _>
-          |> Plan.inmap (function
-            | Choice1Of2 a -> Choice1Of2 (snd >> a)
-            | Choice2Of2 b -> Choice2Of2 b)
-          |> Plan.outmap This)))
+      Plan.traversePlan_ Vector.foldBack cb (That >> emit)
+      >>. awaits right<_, _>
+      >>= (fun (kbp, cbp) -> mergeOuterAux ka ca kbp cbp)
+      |> Plan.orElse (
+        Plan.traversePlan_ Vector.foldBack ca (This >> emit)
+        >>. (Machine.flattened Vector.foldBack left<_, _>
+        |> Plan.inmap (Choice.map (fun a -> snd >> a))
+        |> Plan.outmap This))
     | EQ ->
       Plan.traversePlan_ Vector.foldBack
         (Vector.ofSeq (seq { for a in ca do for b in cb do yield Both(a, b) })) emit
