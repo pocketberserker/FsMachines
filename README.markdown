@@ -1,6 +1,8 @@
 machines
 ========
 
+[![Build status](https://ci.appveyor.com/api/projects/status/n0rt4q1xppap367h)](https://ci.appveyor.com/project/pocketberserker/fsmachines)
+
 Machines are demand driven input sources like pipes or conduits, but can support multiple inputs.
 
 A port of this design to Scala and Haskell is available from https://github.com/runarorama/scala-machines and https://github.com/ekmett/machines
