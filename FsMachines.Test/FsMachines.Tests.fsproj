@@ -6,7 +6,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>1f3ede6e-7d84-45bd-9b0c-00198760a714</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>FsMachines.Test</RootNamespace>
+    <RootNamespace>FsMachines.Tests</RootNamespace>
     <AssemblyName>FsMachines.Tests</AssemblyName>
     <targetframeworkversion>v4.5</targetframeworkversion>
     <Name>FsMachines.Tests</Name>
