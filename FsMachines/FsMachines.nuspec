@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <dependencies>
+      <dependency id="FSharpx.Core" version="1.8.41" />
+    </dependencies>
+    <title>$title$</title>
+    <authors>pocketberserker</authors>
+    <owners>pocketberserker</owners>
+    <licenseUrl>https://github.com/pocketberserker/FsMachines/blob/master/LICENSE.markdown</licenseUrl>
+    <projectUrl>https://github.com/pocketberserker/FsMachines</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>$description$</description>
+    <tags>f# library</tags>
+  </metadata>
+</package>
