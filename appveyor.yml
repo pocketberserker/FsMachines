@@ -1,5 +1,5 @@
 branches:
-  expect:
+  except:
     - gh-pages
 
 configuration:
