@@ -7,6 +7,7 @@ open FsCheck
 open FsCheck.NUnit
 open Machines
 open FSharpx
+open FSharpx.Functional
 
 [<TestFixture>]
 module ProcessTest =

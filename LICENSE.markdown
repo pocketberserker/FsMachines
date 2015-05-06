@@ -1,4 +1,4 @@
-Copyright 2013-
+Copyright 2013-2015
 
     pocketberserker
 
@@ -18,9 +18,9 @@ limitations under the License.
 Apache License, Version 2.0
 ===========================
 
-Apache License   
-Version 2.0, January 2004    
-http://www.apache.org/licenses/    
+Apache License
+Version 2.0, January 2004
+http://www.apache.org/licenses/
 
 ------------------------------------------------------------
 
@@ -119,7 +119,7 @@ meet the following conditions:
 
  - You must give any other recipients of the Work or
     Derivative Works a copy of this License; and
- 
+
  - You must cause any modified files to carry prominent notices
     stating that You changed the files; and
 

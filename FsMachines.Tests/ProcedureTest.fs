@@ -5,6 +5,7 @@ open NUnit.Framework
 open FsUnit
 open Machines
 open FSharpx
+open FSharpx.Functional
 
 [<TestFixture>]
 module ProcedureTest =

@@ -1,6 +1,7 @@
 ﻿namespace Machines
 
 open FSharpx
+open FSharpx.Functional
 
 [<AbstractClass>]
 type AsyncDriver<'T>() =

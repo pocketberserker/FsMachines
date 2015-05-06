@@ -44,14 +44,15 @@ module Tee =
     let g = fun (f : 'a -> obj) -> Choice2Of2 f in g
 
   open Plan
+  open FSharpx.Functional
 
   let hashJoin (f : 'a -> 'k) (g : 'b -> 'k) : Tee<'a, 'b, 'a * 'b> =
-    let rec build m : Plan<T<_, _>, _, Map<'k, Vector<_>>> =
+    let rec build m : Plan<T<_, _>, _, Map<'k, PersistentVector<_>>> =
       awaits(left<_,_>)
       >>= (fun a ->
         let ak = f a
         m
-        |> Map.add ak (m |> Map.findOrDefault ak Vector.empty |> flip Vector.append (Vector.singleton a))
+        |> Map.add ak (m |> Map.findOrDefault ak PersistentVector.empty |> flip PersistentVector.append (PersistentVector.singleton a))
         |> build)
       |> Plan.orElse (Return m)
     plan {
@@ -61,8 +62,8 @@ module Tee =
         >>= (fun b ->
           let k = g b
           m
-          |> Map.findOrDefault k Vector.empty
-          |> flip (Vector.foldBack (fun a r -> Emit((a, b), fun () -> r))) (Return ()))
+          |> Map.findOrDefault k PersistentVector.empty
+          |> flip (PersistentVector.foldBack (fun a r -> Emit((a, b), fun () -> r))) (Return ()))
         |> repeatedly
     }
 
@@ -73,47 +74,47 @@ module Tee =
     else EQ
 
   let rec mergeOuterChunks<'a, 'b, 'k when 'a : equality and 'b : equality and 'k : comparison>
-    : Tee<'k * Vector<'a>, 'k * Vector<'b>, These<'a, 'b>> =
+    : Tee<'k * PersistentVector<'a>, 'k * PersistentVector<'b>, These<'a, 'b>> =
     Plan.awaits left<_, _>
     >>= (fun (ka, as_) ->
       Plan.awaits right<_, _>
       >>= (fun (kb, bs) -> mergeOuterAux ka as_ kb bs)
       |> Plan.orElse (
-        Plan.traversePlan_ Vector.foldBack as_ (This >> emit)
-        >>. (Machine.flattened Vector.foldBack left<_, _>
+        Plan.traversePlan_ PersistentVector.foldBack as_ (This >> emit)
+        >>. (Machine.flattened PersistentVector.foldBack left<_, _>
         |> Plan.inmap (Choice.map (fun a -> snd >> a))
         |> Plan.outmap This)))
     |> Plan.orElse (
-      Machine.flattened Vector.foldBack right<_, _>
+      Machine.flattened PersistentVector.foldBack right<_, _>
       |> Plan.inmap (Choice.mapSecond (fun y -> snd >> y))
       |> Plan.outmap That)
 
-  and mergeOuterAux ka ca kb cb : Tee<'k * Vector<'a>, 'k * Vector<'b>, These<'a, 'b>> =
+  and mergeOuterAux ka ca kb cb : Tee<'k * PersistentVector<'a>, 'k * PersistentVector<'b>, These<'a, 'b>> =
     match (ka, kb) with
     | LT ->
-      Plan.traversePlan_ Vector.foldBack ca (This >> emit)
+      Plan.traversePlan_ PersistentVector.foldBack ca (This >> emit)
       >>. awaits left<_, _>
       >>= (fun (kap, cap) -> mergeOuterAux kap cap kb cb)
       |> Plan.orElse (
-        Plan.traversePlan_ Vector.foldBack cb (That >> emit)
-        >>. (Machine.flattened Vector.foldBack right<_, _>
+        Plan.traversePlan_ PersistentVector.foldBack cb (That >> emit)
+        >>. (Machine.flattened PersistentVector.foldBack right<_, _>
         |> Plan.inmap (Choice.mapSecond (fun y -> snd >> y))
         |> Plan.outmap That))
     | GT ->
-      Plan.traversePlan_ Vector.foldBack cb (That >> emit)
+      Plan.traversePlan_ PersistentVector.foldBack cb (That >> emit)
       >>. awaits right<_, _>
       >>= (fun (kbp, cbp) -> mergeOuterAux ka ca kbp cbp)
       |> Plan.orElse (
-        Plan.traversePlan_ Vector.foldBack ca (This >> emit)
-        >>. (Machine.flattened Vector.foldBack left<_, _>
+        Plan.traversePlan_ PersistentVector.foldBack ca (This >> emit)
+        >>. (Machine.flattened PersistentVector.foldBack left<_, _>
         |> Plan.inmap (Choice.map (fun a -> snd >> a))
         |> Plan.outmap This))
     | EQ ->
-      Plan.traversePlan_ Vector.foldBack
-        (Vector.ofSeq (seq { for a in ca do for b in cb do yield Both(a, b) })) emit
+      Plan.traversePlan_ PersistentVector.foldBack
+        (PersistentVector.ofSeq (seq { for a in ca do for b in cb do yield Both(a, b) })) emit
       >>. mergeOuterChunks
 
   let mergeOuterJoin f g : Tee<'a, 'b, These<'a, 'b>> =
-    let f = Process.groupingBy f |> Plan.outmap (fun (x,v) -> (x, Vector.ofSeq v))
-    let g = Process.groupingBy g |> Plan.outmap (fun (x,v) -> (x, Vector.ofSeq v))
+    let f = Process.groupingBy f |> Plan.outmap (fun (x,v) -> (x, PersistentVector.ofSeq v))
+    let g = Process.groupingBy g |> Plan.outmap (fun (x,v) -> (x, PersistentVector.ofSeq v))
     tee f g mergeOuterChunks
