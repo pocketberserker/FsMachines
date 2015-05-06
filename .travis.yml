@@ -1,0 +1,18 @@
+language: csharp
+sudo: false
+
+env:
+  global:
+    - CONFIGURATION="Release"
+mono:
+  - 3.12.0
+  - 3.10.0
+solution: FsMachines.sln
+
+install:
+  - nuget install NUnit.Runners -Version 2.6.4 -OutputDirectory packages -ExcludeVersion
+
+script:
+  - xbuild ./FsMachines.sln /p:Configuration=${CONFIGURATION}
+  - mono ./packages/NUnit.Runners/tools/nunit-console.exe ./FsMachines.Tests/bin/${CONFIGURATION}/FsMachines.Tests.dll
+
