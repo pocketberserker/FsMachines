@@ -1,5 +1,4 @@
 language: csharp
-sudo: false
 
 env:
   global:
@@ -10,9 +9,9 @@ mono:
 solution: FsMachines.sln
 
 install:
-  - nuget install NUnit.Runners -Version 2.6.4 -OutputDirectory packages -ExcludeVersion
+  - sudo apt-get install nunit-console
 
 script:
   - xbuild ./FsMachines.sln /p:Configuration=${CONFIGURATION}
-  - mono ./packages/NUnit.Runners/tools/nunit-console.exe ./FsMachines.Tests/bin/${CONFIGURATION}/FsMachines.Tests.dll
+  - nunit-console ./FsMachines.Tests/bin/${CONFIGURATION}/FsMachines.Tests.dll
 
