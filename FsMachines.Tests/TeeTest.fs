@@ -11,8 +11,6 @@ open FSharpx
 [<TestFixture>]
 module TeeTest =
 
-  let fsCheck t = fsCheck "" t
-
   let q1 = Source.source List.foldBack ([("3", 1); ("5", 2); ("7", 2)]) |> Procedure.idProcedure
   let q2 = Source.source List.foldBack ([(2, "10"); (1, "9"); (12, "14")]) |> Procedure.idProcedure
   
@@ -36,52 +34,52 @@ module TeeTest =
     })
     |> Gen.map (List.sortBy fst)
 
-  [<Test>]
-  let ``merge outer join doesn't lose any keys`` () =
-    fsCheck (Prop.forAll (Arb.fromGen (Gen.two randomPairs)) (fun (l1, l2) ->
-      let results =
-        Tee.mergeOuterJoin fst fst
-        |> Tee.capL (Source.source List.foldBack l1)
-        |> Source.cap (Source.source List.foldBack l2)
-        |> Plan.foldMap listMonoid (Seq.singleton >> Seq.toList)
-      let reference = Set.ofList <| List.append (l1 |> List.map fst) (l2 |> List.map fst)
+  type RandomPairs =
+    static member Tuple() =
+      Arb.fromGen (Gen.two randomPairs)
 
-      results
-      |> List.map (function
-        | Both(a, b) -> fst a
-        | This a -> fst a
-        | That b -> fst b)
-      |> Set.ofList
-      |> ((=) reference)
-    ))
+  [<Property(Arbitrary = [| typeof<RandomPairs> |])>]
+  let ``merge outer join doesn't lose any keys`` (l1: (int * int) list, l2: (int * int) list) =
+    let results =
+      Tee.mergeOuterJoin fst fst
+      |> Tee.capL (Source.source List.foldBack l1)
+      |> Source.cap (Source.source List.foldBack l2)
+      |> Plan.foldMap listMonoid (Seq.singleton >> Seq.toList)
+    let reference = Set.ofList <| List.append (l1 |> List.map fst) (l2 |> List.map fst)
 
-  [<Test>]
-  let ``merge outer join doesn't lose any values`` () =
-    fsCheck (Prop.forAll (Arb.fromGen (Gen.two randomPairs)) (fun (l1, l2) ->
-      let rawResult =
-        Tee.mergeOuterJoin fst fst
-        |> Tee.capL (Source.source List.foldBack l1)
-        |> Source.cap (Source.source List.foldBack l2)
-        |> Plan.foldMap listMonoid (Seq.singleton >> Seq.toList)
-      let result =
-        rawResult
-        |> List.collect (function
-          | Both(a, b) -> [a; b]
-          | This a -> [a]
-          | That b -> [b])
-        |> Seq.groupBy fst
-        |> Seq.map (fun (k, v) -> (k, Set.ofSeq v))
-        |> Seq.sortBy fst
-        |> Seq.toList
-      let reference =
-        List.append l1 l2
-        |> Seq.groupBy fst
-        |> Seq.map (fun (k, v) -> (k, Set.ofSeq v))
-        |> Seq.sortBy fst
-        |> Seq.toList
+    results
+    |> List.map (function
+      | Both(a, b) -> fst a
+      | This a -> fst a
+      | That b -> fst b)
+    |> Set.ofList
+    |> ((=) reference)
 
-      result = reference
-    ))
+  [<Property(Arbitrary = [| typeof<RandomPairs> |])>]
+  let ``merge outer join doesn't lose any values`` (l1: (int * int) list, l2: (int * int) list) =
+    let rawResult =
+      Tee.mergeOuterJoin fst fst
+      |> Tee.capL (Source.source List.foldBack l1)
+      |> Source.cap (Source.source List.foldBack l2)
+      |> Plan.foldMap listMonoid (Seq.singleton >> Seq.toList)
+    let result =
+      rawResult
+      |> List.collect (function
+        | Both(a, b) -> [a; b]
+        | This a -> [a]
+        | That b -> [b])
+      |> Seq.groupBy fst
+      |> Seq.map (fun (k, v) -> (k, Set.ofSeq v))
+      |> Seq.sortBy fst
+      |> Seq.toList
+    let reference =
+      List.append l1 l2
+      |> Seq.groupBy fst
+      |> Seq.map (fun (k, v) -> (k, Set.ofSeq v))
+      |> Seq.sortBy fst
+      |> Seq.toList
+
+    result = reference
 
   let intersectWithKey m1 m2 f =
     m1
@@ -92,28 +90,26 @@ module TeeTest =
 
   let intersectWith m2 f m1 = intersectWithKey m1 m2 (fun _ x y -> f (x, y))
 
-  [<Test>]
-  let ``hash join works`` () =
-    fsCheck (Prop.forAll (Arb.fromGen (Gen.two randomPairs)) (fun (l1, l2) ->
-      let result =
-        Tee.hashJoin fst fst
-        |> Tee.capL (Source.source List.foldBack l1)
-        |> Source.cap (Source.source List.foldBack l2)
-        |> Plan.foldMap listMonoid (Seq.singleton >> Seq.toList)
-        |> List.map (fun ((k, v1), (_, v2)) -> (k, (v1, v2)))
-        |> Seq.sort
-        |> Seq.toList
+  [<Property(Arbitrary = [| typeof<RandomPairs> |])>]
+  let ``hash join works`` (l1: (int * int) list, l2: (int * int) list) =
+    let result =
+      Tee.hashJoin fst fst
+      |> Tee.capL (Source.source List.foldBack l1)
+      |> Source.cap (Source.source List.foldBack l2)
+      |> Plan.foldMap listMonoid (Seq.singleton >> Seq.toList)
+      |> List.map (fun ((k, v1), (_, v2)) -> (k, (v1, v2)))
+      |> Seq.sort
+      |> Seq.toList
 
-      let cartesian a b = seq { for aa in a do for bb in b do yield (aa, bb) }
+    let cartesian a b = seq { for aa in a do for bb in b do yield (aa, bb) }
 
-      let reference =
-        l1
-        |> Seq.groupBy fst
-        |> intersectWith (l2 |> Seq.groupBy fst) (fun (v1, v2) -> cartesian v1 v2)
-        |> Seq.collect (fun (k, pairs) ->
-          pairs |> Seq.map (fun (v1, v2) -> (k, (snd v1,  snd v2))))
-        |> Seq.sort
-        |> Seq.toList
+    let reference =
+      l1
+      |> Seq.groupBy fst
+      |> intersectWith (l2 |> Seq.groupBy fst) (fun (v1, v2) -> cartesian v1 v2)
+      |> Seq.collect (fun (k, pairs) ->
+        pairs |> Seq.map (fun (v1, v2) -> (k, (snd v1,  snd v2))))
+      |> Seq.sort
+      |> Seq.toList
 
-      result = reference
-    ))
+    result = reference

@@ -54,7 +54,7 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
-    <Compile Include="FsCheckRunner.fs" />
+    <Compile Include="FsCheckAddin.fs" />
     <Compile Include="ProcessTest.fs" />
     <Compile Include="ProcedureTest.fs" />
     <Compile Include="TeeTest.fs" />
@@ -62,6 +62,14 @@
   <ItemGroup>
     <Reference Include="FsCheck">
       <HintPath>..\packages\FsCheck.2.2.2\lib\net45\FsCheck.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="FsCheck.NUnit">
+      <HintPath>..\packages\FsCheck.Nunit.2.2.2\lib\net45\FsCheck.NUnit.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="FsCheck.NUnit.Addin">
+      <HintPath>..\packages\FsCheck.Nunit.2.2.2\lib\net45\FsCheck.NUnit.Addin.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="FSharp.Control.AsyncSeq">
@@ -92,6 +100,12 @@
     <Reference Include="NHamcrest">
       <HintPath>..\packages\FsUnit.1.4.0.0\lib\net45\NHamcrest.dll</HintPath>
       <Private>True</Private>
+    </Reference>
+    <Reference Include="nunit.core">
+      <HintPath>..\packages\NUnit.Runners.2.6.4\tools\lib\nunit.core.dll</HintPath>
+    </Reference>
+    <Reference Include="nunit.core.interfaces">
+      <HintPath>..\packages\NUnit.Runners.2.6.4\tools\lib\nunit.core.interfaces.dll</HintPath>
     </Reference>
     <Reference Include="nunit.framework">
       <HintPath>..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
